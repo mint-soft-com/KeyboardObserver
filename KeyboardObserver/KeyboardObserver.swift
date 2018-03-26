@@ -15,7 +15,7 @@ public enum KeyboardEventType {
     case didHide
     case willChangeFrame
     case didChangeFrame
-    
+
     public var notificationName: NSNotification.Name {
         switch self {
         case .willShow:
@@ -32,7 +32,7 @@ public enum KeyboardEventType {
             return .UIKeyboardDidChangeFrame
         }
     }
-    
+
     init?(name: NSNotification.Name) {
         switch name {
         case NSNotification.Name.UIKeyboardWillShow:
@@ -51,7 +51,7 @@ public enum KeyboardEventType {
             return nil
         }
     }
-    
+
     static func allEventNames() -> [NSNotification.Name] {
         return [
             KeyboardEventType.willShow,
@@ -71,11 +71,11 @@ public struct KeyboardEvent {
     public let curve: UIViewAnimationCurve
     public let duration: TimeInterval
     public var isLocal: Bool?
-    
+
     public var options: UIViewAnimationOptions {
         return UIViewAnimationOptions(rawValue: UInt(curve.rawValue << 16))
     }
-    
+
     init?(notification: Notification) {
         guard let userInfo = (notification as NSNotification).userInfo else { return nil }
         guard let type = KeyboardEventType(name: notification.name) else { return nil }
@@ -88,7 +88,7 @@ public struct KeyboardEvent {
         guard
             let durationDouble = (userInfo[UIKeyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue
             else { return nil }
-        
+
         self.type = type
         self.keyboardFrameBegin = begin
         self.keyboardFrameEnd = end
@@ -116,14 +116,14 @@ open class KeyboardObserver {
     open var state = KeyboardState.initial
     open var isEnabled = true
     fileprivate var eventClosures = [KeyboardEventClosure]()
-    
+
     deinit {
         eventClosures.removeAll()
         KeyboardEventType.allEventNames().forEach {
             NotificationCenter.default.removeObserver(self, name: $0, object: nil)
         }
     }
-    
+
     public init() {
         eventClosures.removeAll()
         KeyboardEventType.allEventNames().forEach {
@@ -134,7 +134,14 @@ open class KeyboardObserver {
             NotificationCenter.default.addObserver(self, selector: #selector(notified(_:)), name: $0, object: nil)
         }
     }
-    
+
+    public func deinitEvent(){
+      eventClosures.removeAll()
+      KeyboardEventType.allEventNames().forEach {
+        NotificationCenter.default.removeObserver(self, name: $0, object: nil)
+      }
+    }
+
     open func observe(_ event: @escaping KeyboardEventClosure) {
         eventClosures.append(event)
     }
@@ -143,7 +150,7 @@ open class KeyboardObserver {
 internal extension KeyboardObserver {
     @objc func notified(_ notification: Notification) {
         guard let event = KeyboardEvent(notification: notification) else { return }
-        
+
         switch event.type {
         case .willShow:
             state = .showing
