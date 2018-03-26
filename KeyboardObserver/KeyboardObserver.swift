@@ -125,6 +125,11 @@ open class KeyboardObserver {
     }
     
     public init() {
+        eventClosures.removeAll()
+        KeyboardEventType.allEventNames().forEach {
+            NotificationCenter.default.removeObserver(self, name: $0, object: nil)
+        }
+
         KeyboardEventType.allEventNames().forEach {
             NotificationCenter.default.addObserver(self, selector: #selector(notified(_:)), name: $0, object: nil)
         }
